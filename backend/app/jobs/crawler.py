@@ -119,7 +119,7 @@ async def process_and_save_papers(xml_data: str):
 
 async def main():
     await init_db()
-    xml_data = fetch_arxiv_papers(max_results=30)
+    xml_data = fetch_arxiv_papers(max_results=200)
     await process_and_save_papers(xml_data)
 
 if __name__ == "__main__":

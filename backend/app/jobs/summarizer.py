@@ -61,32 +61,48 @@ async def process_papers():
     papers_to_process = await Paper.find(Paper.embedded == False).to_list()
     print(f"Found {len(papers_to_process)} papers to process.")
     
+    if not papers_to_process:
+        return
+
+    # 1. Summarize all papers locally (Free)
+    successfully_summarized = []
+    
     for paper in papers_to_process:
-        print(f"Processing {paper.arxiv_id}...")
-        
-        # 1. Summarize with local DistilBART
+        print(f"Summarizing {paper.arxiv_id}...")
         try:
-            result = summarizer(paper.abstract, max_length=70, min_length=30, do_sample=False)
-            summary = result[0]['summary_text'].strip()
-            paper.ai_summary = summary
+            if not paper.ai_summary:
+                result = summarizer(paper.abstract, max_length=70, min_length=30, do_sample=False)
+                paper.ai_summary = result[0]['summary_text'].strip()
+                await paper.save()
+            successfully_summarized.append(paper)
         except Exception as e:
             print(f"HuggingFace Summarization failed for {paper.arxiv_id}: {e}")
             continue
-            
-        # 2. Embed with Cohere Embed
-        text_to_embed = f"{paper.title}. {paper.ai_summary}"
+
+    if not successfully_summarized:
+        print("No papers were successfully summarized.")
+        return
+
+    # 2. Batch Embedding and Upserting
+    BATCH_SIZE = 96
+    
+    for i in range(0, len(successfully_summarized), BATCH_SIZE):
+        batch = successfully_summarized[i:i + BATCH_SIZE]
+        texts_to_embed = [f"{paper.title}. {paper.ai_summary}" for paper in batch]
+        
+        print(f"Embedding batch of {len(batch)} papers via Cohere...")
         try:
             embed_res = co.embed(
-                texts=[text_to_embed],
+                texts=texts_to_embed,
                 model='embed-english-v3.0',
                 input_type='search_document'
             )
-            vector = embed_res.embeddings[0]
+            embeddings = embed_res.embeddings
             
             # 3. Upsert to Qdrant
-            q_client.upsert(
-                collection_name=COLLECTION_NAME,
-                points=[
+            points = []
+            for paper, vector in zip(batch, embeddings):
+                points.append(
                     qmodels.PointStruct(
                         id=abs(hash(paper.arxiv_id)) % (10 ** 18),
                         vector=vector,
@@ -96,19 +112,23 @@ async def process_papers():
                             "category": paper.primary_category
                         }
                     )
-                ]
+                )
+            
+            q_client.upsert(
+                collection_name=COLLECTION_NAME,
+                points=points
             )
             
             # 4. Mark as embedded in Mongo
-            paper.embedded = True
-            await paper.save()
-            print(f"Successfully processed {paper.arxiv_id}")
+            for paper in batch:
+                paper.embedded = True
+                await paper.save()
+                
+            print(f"Successfully processed and embedded batch of {len(batch)} papers.")
+            time.sleep(2)
             
         except Exception as e:
-            print(f"Cohere Embedding/Qdrant failed for {paper.arxiv_id}: {e}")
-            
-        # Be nice to APIs (especially Trial Keys)
-        time.sleep(2)
+            print(f"Cohere Embedding/Qdrant failed for batch starting at index {i}: {e}")
 
 async def main():
     await init_db()
