@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     
     # Cohere
     COHERE_API_KEY: str | None = None
+    # Security
+    FRONTEND_URL: str = "http://localhost:5173"
 
     model_config = SettingsConfigDict(env_file=ENV_PATH, env_file_encoding="utf-8", extra="ignore")
 

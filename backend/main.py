@@ -22,10 +22,13 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Configure CORS for local development
+from app.core.config import settings
+
+# Configure CORS for strict frontend access
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # React Vite default port
+    allow_origins=[settings.FRONTEND_URL, "http://localhost:5173"],  # Production URL + Localhost fallback
+
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
