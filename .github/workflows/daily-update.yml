@@ -1,0 +1,53 @@
+name: Daily ArXiv Sync and Summarize
+
+on:
+  schedule:
+    # Run every day at 00:00 UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    # Allows manual triggering from the GitHub Actions tab
+
+jobs:
+  sync_and_summarize:
+    runs-on: ubuntu-latest
+    
+    env:
+      MONGODB_URI: ${{ secrets.MONGODB_URI }}
+      COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+      QDRANT_URL: ${{ secrets.QDRANT_URL }}
+      QDRANT_API_KEY: ${{ secrets.QDRANT_API_KEY }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip' # caching pip dependencies
+
+      - name: Cache Hugging Face models
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface/hub
+          key: ${{ runner.os }}-hf-${{ hashFiles('backend/requirements.txt', 'backend/requirements-ml.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-hf-
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-ml.txt
+
+      - name: Run Crawler (Fetch new papers)
+        run: |
+          cd backend
+          python app/jobs/crawler.py
+
+      - name: Run Summarizer (Generate AI summaries & embeddings)
+        run: |
+          cd backend
+          python app/jobs/summarizer.py

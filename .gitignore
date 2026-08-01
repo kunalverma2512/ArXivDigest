@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
+
+# Environment variables
+.env
+.env.*
+
+# Python virtual environments (if created in root)
+venv/
+env/
+.venv/
+
+# Ignore local run artifacts
+*.log

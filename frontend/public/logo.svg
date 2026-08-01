@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <rect width="400" height="400" fill="#000000" rx="40"/>
+  <!-- Paper stack -->
+  <path d="M100 240 h200 v20 h-200 z" fill="#ffffff" opacity="0.5"/>
+  <path d="M90 200 h220 v20 h-220 z" fill="#ffffff" opacity="0.75"/>
+  <!-- Top Paper -->
+  <rect x="80" y="80" width="240" height="100" fill="#ffffff" rx="8"/>
+  
+  <!-- Text lines on top paper -->
+  <rect x="110" y="105" width="180" height="12" fill="#000000" rx="6"/>
+  <rect x="110" y="135" width="140" height="12" fill="#000000" rx="6"/>
+  
+  <!-- AI Sparkle / Summary Icon -->
+  <path d="M260 160 l10 -25 l25 -10 l-25 -10 l-10 -25 l-10 25 l-25 10 l25 10 z" fill="#ffffff"/>
+  
+  <!-- Digest Text -->
+  <text x="200" y="340" font-family="monospace" font-size="52" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="4">ArXiv</text>
+</svg>
