@@ -69,19 +69,19 @@ const Explore = () => {
   return (
     <div className="w-full">
       {/* MASSIVE SEARCH SECTION */}
-      <section className="py-12 border-b border-black/10">
-        <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-black mb-8">
+      <section className="py-8 sm:py-12 border-b border-black/10">
+        <h1 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tighter text-black mb-6 sm:mb-8">
           Search the Archive.
         </h1>
 
         <div className="relative max-w-4xl">
-          <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
-            <Search className="h-8 w-8 text-black" strokeWidth={3} />
+          <div className="absolute inset-y-0 left-0 pl-4 sm:pl-6 flex items-center pointer-events-none">
+            <Search className="h-5 w-5 sm:h-8 sm:w-8 text-black" strokeWidth={3} />
           </div>
           <input
             type="text"
-            className="block w-full pl-20 pr-[120px] py-6 border-4 border-black text-2xl font-medium text-black placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-black bg-white"
-            placeholder="Search by topic, author, or semantic concept..."
+            className="block w-full pl-12 sm:pl-20 pr-24 sm:pr-[140px] py-4 sm:py-6 border-4 border-black text-base sm:text-2xl font-medium text-black placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-black bg-white"
+            placeholder="Search by topic, author..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -89,9 +89,9 @@ const Explore = () => {
           <button
             onClick={handleSearch}
             disabled={loading}
-            className="absolute inset-y-2 right-2 bg-black text-white px-8 font-bold uppercase tracking-widest text-sm hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[120px]"
+            className="absolute inset-y-1.5 sm:inset-y-2 right-1.5 sm:right-2 bg-black text-white px-4 sm:px-8 font-bold uppercase tracking-widest text-xs sm:text-sm hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[80px] sm:min-w-[120px]"
           >
-            {loading ? <Loader2 className="animate-spin" size={20} /> : 'Search'}
+            {loading ? <Loader2 className="animate-spin" size={16} className="sm:w-5 sm:h-5" /> : 'Search'}
           </button>
         </div>
       </section>
