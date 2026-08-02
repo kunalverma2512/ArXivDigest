@@ -1,10 +1,30 @@
 import { Link } from 'react-router-dom';
 
+import { TypeAnimation } from 'react-type-animation';
+
 const HeroSection = () => {
   return (
     <section className="py-20 flex flex-col items-center text-center border-b border-black/10">
-      <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-black mb-6">
-        Research, Decoded.
+      <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-black mb-6 h-[100px] md:h-[120px] flex items-center justify-center">
+        <span>
+          Research,{' '}
+          <TypeAnimation
+            sequence={[
+              'Decoded.',
+              2000,
+              'Simplified.',
+              2000,
+              'Unlocked.',
+              2000,
+              'Accessible.',
+              2000
+            ]}
+            wrapper="span"
+            speed={30}
+            repeat={Infinity}
+            className="text-gray-400"
+          />
+        </span>
       </h1>
       <p className="max-w-2xl text-lg md:text-xl text-gray-600 font-medium leading-relaxed mb-10">
         We read the math so you don't have to. 100+ daily AI papers summarized into 2 sentences using Cohere and PyTorch.
