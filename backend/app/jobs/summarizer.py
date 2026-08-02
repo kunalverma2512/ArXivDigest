@@ -71,7 +71,13 @@ async def process_papers():
         print(f"Summarizing {paper.arxiv_id}...")
         try:
             if not paper.ai_summary:
-                result = summarizer(paper.abstract, max_length=70, min_length=30, do_sample=False)
+                result = summarizer(
+                    paper.abstract, 
+                    max_length=80, 
+                    do_sample=False,
+                    early_stopping=True,
+                    no_repeat_ngram_size=3
+                )
                 paper.ai_summary = result[0]['summary_text'].strip()
                 await paper.save()
             successfully_summarized.append(paper)

@@ -33,12 +33,13 @@ const AllPapers = ({ currentPage, onPageChange }) => {
   return (
     <section id="all-papers-section" className="py-16 border-t-4 border-black">
       {/* Section Header */}
-      <div className="flex items-end justify-between mb-10 border-b border-black pb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-10 border-b border-black pb-6">
         <div className="flex items-center gap-4">
-          <BookOpen size={32} className="text-black" strokeWidth={2.5} />
+          <BookOpen size={32} className="text-black hidden sm:block" strokeWidth={2.5} />
+          <BookOpen size={24} className="text-black sm:hidden" strokeWidth={2.5} />
           <div>
-            <h2 className="text-3xl font-black tracking-tighter text-black uppercase">Browse All Papers</h2>
-            <p className="text-sm text-gray-500 font-medium mt-1">
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tighter text-black uppercase">Browse All Papers</h2>
+            <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">
               {data ? `${data.total} papers in the archive` : 'Loading archive…'}
             </p>
           </div>
@@ -106,18 +107,18 @@ const AllPapers = ({ currentPage, onPageChange }) => {
 
           {/* Pagination Controls */}
           {data.total_pages > 1 && (
-            <div className="flex items-center justify-center gap-2 pt-8 border-t border-black/10">
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-8 border-t border-black/10">
               <button
                 onClick={() => handlePageChange(data.page - 1)}
                 disabled={data.page === 1}
-                className="flex items-center gap-2 px-5 py-3 border-2 border-black font-bold uppercase tracking-widest text-sm hover:bg-black hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-black"
+                className="flex items-center gap-1 sm:gap-2 px-3 py-2 sm:px-5 sm:py-3 border-2 border-black font-bold uppercase tracking-widest text-xs sm:text-sm hover:bg-black hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-black"
               >
-                <ChevronLeft size={16} /> Prev
+                <ChevronLeft size={16} /> <span className="hidden sm:inline">Prev</span>
               </button>
 
-              {/* Page number buttons — show up to 5 around current page */}
+              {/* Page number buttons */}
               {Array.from({ length: data.total_pages }, (_, i) => i + 1)
-                .filter(p => p === 1 || p === data.total_pages || Math.abs(p - data.page) <= 2)
+                .filter(p => p === 1 || p === data.total_pages || Math.abs(p - data.page) <= 1) // reduced to 1 on mobile to save space
                 .reduce((acc, p, idx, arr) => {
                   if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...');
                   acc.push(p);
@@ -125,12 +126,12 @@ const AllPapers = ({ currentPage, onPageChange }) => {
                 }, [])
                 .map((item, idx) =>
                   item === '...' ? (
-                    <span key={`ellipsis-${idx}`} className="px-3 py-3 text-gray-400 font-bold select-none">…</span>
+                    <span key={`ellipsis-${idx}`} className="px-1 sm:px-3 py-2 sm:py-3 text-gray-400 font-bold select-none">…</span>
                   ) : (
                     <button
                       key={item}
                       onClick={() => handlePageChange(item)}
-                      className={`px-5 py-3 border-2 border-black font-bold uppercase tracking-widest text-sm transition-colors
+                      className={`px-3 py-2 sm:px-5 sm:py-3 border-2 border-black font-bold uppercase tracking-widest text-xs sm:text-sm transition-colors
                         ${data.page === item
                           ? 'bg-black text-white'
                           : 'bg-white text-black hover:bg-gray-100'
@@ -144,9 +145,9 @@ const AllPapers = ({ currentPage, onPageChange }) => {
               <button
                 onClick={() => handlePageChange(data.page + 1)}
                 disabled={data.page === data.total_pages}
-                className="flex items-center gap-2 px-5 py-3 border-2 border-black font-bold uppercase tracking-widest text-sm hover:bg-black hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-black"
+                className="flex items-center gap-1 sm:gap-2 px-3 py-2 sm:px-5 sm:py-3 border-2 border-black font-bold uppercase tracking-widest text-xs sm:text-sm hover:bg-black hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-black"
               >
-                Next <ChevronRight size={16} />
+                <span className="hidden sm:inline">Next</span> <ChevronRight size={16} />
               </button>
             </div>
           )}

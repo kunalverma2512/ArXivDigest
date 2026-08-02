@@ -17,21 +17,30 @@ const Navbar = () => {
         </Link>
 
         {/* Navigation Links */}
-        <div className="flex items-center space-x-8">
-          <Link to="/explore" className="text-sm font-medium text-black hover:opacity-70 transition-opacity">
+        <div className="flex items-center gap-4 md:gap-8">
+          <Link to="/explore" className="text-sm font-medium text-black hover:opacity-70 transition-opacity hidden sm:block">
             Explore
           </Link>
-          <Link to="/architecture" className="text-sm font-medium text-black hover:opacity-70 transition-opacity">
+          <Link to="/architecture" className="text-sm font-medium text-black hover:opacity-70 transition-opacity hidden sm:block">
             Architecture
           </Link>
+          
+          {/* Mobile-only links just in case */}
+          <Link to="/explore" className="text-xs font-medium text-black hover:opacity-70 transition-opacity sm:hidden">
+            Exp
+          </Link>
+          <Link to="/architecture" className="text-xs font-medium text-black hover:opacity-70 transition-opacity sm:hidden">
+            Arch
+          </Link>
+
           <a
             href="https://github.com/kunalverma2512/ArXivDigest"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 text-sm font-medium text-white bg-black px-4 py-2 hover:bg-black/80 transition-colors"
+            className="flex items-center gap-2 text-xs sm:text-sm font-medium text-white bg-black px-3 py-1.5 sm:px-4 sm:py-2 hover:bg-black/80 transition-colors"
           >
             <GithubIcon size={16} />
-            GitHub
+            <span className="hidden sm:inline">GitHub</span>
           </a>
         </div>
       </div>

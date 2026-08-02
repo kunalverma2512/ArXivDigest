@@ -27,10 +27,10 @@ const DailyDigestFeed = () => {
 
   return (
     <section className="py-20">
-      <div className="flex items-end justify-between mb-12">
+      <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-8 sm:mb-12 gap-4">
         <div>
-          <h2 className="text-4xl font-bold tracking-tight text-black mb-2">Today's Digest</h2>
-          <p className="text-gray-600">The most important papers processed in the last 24 hours.</p>
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-black mb-2">Today's Digest</h2>
+          <p className="text-sm sm:text-base text-gray-600">The most important papers processed in the last 24 hours.</p>
         </div>
         <Link to="/explore" className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 hover:opacity-70 transition-opacity">
           View All <ArrowRight size={16} />

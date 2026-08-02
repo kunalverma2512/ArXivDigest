@@ -66,23 +66,23 @@ const PaperDetails = () => {
 
       {/* Header Section */}
       <header className="mb-12 border-b border-black/10 pb-12">
-        <div className="flex items-center gap-4 mb-6">
-          <span className="bg-black text-white text-xs font-bold px-3 py-1 uppercase tracking-wider">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-6">
+          <span className="bg-black text-white text-[10px] sm:text-xs font-bold px-2 sm:px-3 py-1 uppercase tracking-wider">
             {paper.primary_category}
           </span>
-          <span className="text-sm font-bold text-gray-500">
+          <span className="text-xs sm:text-sm font-bold text-gray-500">
             ArXiv ID: {paper.arxiv_id}
           </span>
-          <span className="text-sm font-bold text-gray-500">
+          <span className="text-xs sm:text-sm font-bold text-gray-500">
             Published: {new Date(paper.published_date).toLocaleDateString()}
           </span>
         </div>
         
-        <h1 className="text-4xl md:text-5xl font-black tracking-tight text-black mb-6 leading-tight">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-black mb-6 leading-tight">
           {paper.title}
         </h1>
         
-        <div className="flex flex-wrap gap-x-4 gap-y-2 text-lg font-medium text-gray-700">
+        <div className="flex flex-wrap gap-x-4 gap-y-2 text-base sm:text-lg font-medium text-gray-700">
           {paper.authors.join(', ')}
         </div>
       </header>
@@ -90,11 +90,11 @@ const PaperDetails = () => {
       {/* AI Summary Section (The Core Feature) */}
       {paper.ai_summary && (
         <section className="mb-16">
-          <h2 className="text-xl font-bold uppercase tracking-widest text-black mb-6 flex items-center gap-2">
+          <h2 className="text-lg sm:text-xl font-bold uppercase tracking-widest text-black mb-6 flex items-center gap-2">
             <Quote size={20} /> AI Summary
           </h2>
-          <div className="border-4 border-black p-8 bg-gray-50/50">
-            <p className="text-2xl font-medium text-black leading-relaxed">
+          <div className="border-4 border-black p-6 sm:p-8 bg-gray-50/50">
+            <p className="text-lg sm:text-2xl font-medium text-black leading-relaxed">
               {paper.ai_summary}
             </p>
           </div>
@@ -119,12 +119,12 @@ const PaperDetails = () => {
           href={paper.pdf_url || `https://arxiv.org/pdf/${paper.arxiv_id}`} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="flex-1 bg-black text-white px-8 py-5 text-sm font-bold uppercase tracking-widest text-center hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+          className="flex-1 bg-black text-white px-4 sm:px-8 py-4 sm:py-5 text-xs sm:text-sm font-bold uppercase tracking-widest text-center hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
         >
           Read Full PDF on ArXiv <ExternalLink size={16} />
         </a>
         <button 
-          className="flex-1 bg-white text-black border-2 border-black px-8 py-5 text-sm font-bold uppercase tracking-widest hover:bg-gray-50 transition-colors"
+          className="flex-1 bg-white text-black border-2 border-black px-4 sm:px-8 py-4 sm:py-5 text-xs sm:text-sm font-bold uppercase tracking-widest hover:bg-gray-50 transition-colors"
           onClick={() => {
             navigator.clipboard.writeText(`${paper.title} - ${paper.authors.join(', ')} (${new Date(paper.published_date).getFullYear()})`);
             alert("Citation copied to clipboard!");

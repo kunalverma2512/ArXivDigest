@@ -51,9 +51,9 @@ const TechStackCards = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
         {tech.map((item) => (
-          <div key={item.id} className="p-8 border border-black/10 bg-gray-50/50 hover:bg-white hover:shadow-xl transition-all duration-300 rounded-xl group">
+          <div key={item.id} className="p-6 sm:p-8 border border-black/10 bg-gray-50/50 hover:bg-white hover:shadow-xl transition-all duration-300 rounded-xl group">
             <div className="w-12 h-12 bg-black text-white rounded-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
               {item.icon}
             </div>
