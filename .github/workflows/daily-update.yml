@@ -32,9 +32,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface/hub
-          key: ${{ runner.os }}-hf-${{ hashFiles('backend/requirements.txt', 'backend/requirements-ml.txt') }}
+          key: ${{ runner.os }}-hf-v2-${{ hashFiles('backend/requirements.txt', 'backend/requirements-ml.txt') }}
           restore-keys: |
-            ${{ runner.os }}-hf-
+            ${{ runner.os }}-hf-v2-
 
       - name: Install backend dependencies
         run: |

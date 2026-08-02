@@ -24,7 +24,7 @@ co = cohere.Client(api_key=settings.COHERE_API_KEY)
 # Initialize HuggingFace Local Summarizer
 device = "mps" if torch.backends.mps.is_available() else "cpu"
 print(f"Initializing DistilBART on {device}...")
-summarizer = pipeline("summarization", model="sshleifer/distilbart-cnn-12-6", device=device)
+summarizer = pipeline("summarization", model="lrakotoson/scitldr", device=device)
 
 # Initialize Qdrant Client
 q_client = QdrantClient(url=settings.QDRANT_URL, api_key=settings.QDRANT_API_KEY)
