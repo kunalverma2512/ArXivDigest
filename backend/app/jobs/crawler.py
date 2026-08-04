@@ -16,7 +16,10 @@ sys.path.append(BASE_DIR)
 from app.core.config import settings
 from app.models.paper import Paper
 
-ARXIV_API_URL = "http://export.arxiv.org/api/query"
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+ARXIV_API_URL = "https://export.arxiv.org/api/query"
 CATEGORIES = ["cs.AI", "cs.LG", "cs.CL", "cs.CV"]
 
 async def init_db():
@@ -27,6 +30,23 @@ async def init_db():
     db = client[settings.MONGODB_DB_NAME]
     await init_beanie(database=db, document_models=[Paper])
     print(f"Connected to MongoDB: {settings.MONGODB_DB_NAME}")
+
+def _build_session() -> requests.Session:
+    retry = Retry(
+        total=5,
+        connect=5,
+        read=5,
+        backoff_factor=2,  # 2s, 4s, 8s, 16s...
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["GET"],
+        raise_on_status=False,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    s = requests.Session()
+    s.mount("http://", adapter)
+    s.mount("https://", adapter)
+    s.headers.update({"User-Agent": "ArXivDigest/1.0 (GitHub Actions crawler)"})
+    return s
 
 def fetch_arxiv_papers(max_results: int = 50):
     # Build query manually — using requests params= would encode + as %2B, breaking ArXiv's OR syntax
@@ -43,7 +63,8 @@ def fetch_arxiv_papers(max_results: int = 50):
     # Be nice to ArXiv API (rate limits)
     time.sleep(3)
 
-    response = requests.get(url)
+    session = _build_session()
+    response = session.get(url, timeout=(10, 60))
     response.raise_for_status()
     return response.text
 
