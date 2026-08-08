@@ -33,10 +33,10 @@ async def init_db():
 
 def _build_session() -> requests.Session:
     retry = Retry(
-        total=5,
+        total=7,
         connect=5,
         read=5,
-        backoff_factor=2,  # 2s, 4s, 8s, 16s...
+        backoff_factor=3,  # 3s, 6s, 12s, 24s, 48s...
         status_forcelist=[429, 500, 502, 503, 504],
         allowed_methods=["GET"],
         raise_on_status=False,
@@ -45,7 +45,8 @@ def _build_session() -> requests.Session:
     s = requests.Session()
     s.mount("http://", adapter)
     s.mount("https://", adapter)
-    s.headers.update({"User-Agent": "ArXivDigest/1.0 (GitHub Actions crawler)"})
+    # Add email to User-Agent as per arXiv guidelines to avoid blocks
+    s.headers.update({"User-Agent": "ArXivDigest-Bot/1.0 (mailto:kunalverma2512@gmail.com)"})
     return s
 
 def fetch_arxiv_papers(max_results: int = 50):
@@ -60,11 +61,22 @@ def fetch_arxiv_papers(max_results: int = 50):
     )
 
     print(f"Fetching {max_results} papers from ArXiv...")
-    # Be nice to ArXiv API (rate limits)
-    time.sleep(3)
+    
+    # CRITICAL FIX: GitHub Actions cron jobs usually fire exactly at the top of the minute (e.g., 00:00:00).
+    # Hundreds of other GitHub Actions hit arXiv at this exact same second, causing a 503 WAF block.
+    # We add a random jitter (delay) of up to 45 seconds to bypass this traffic spike.
+    import random
+    jitter = random.uniform(5, 45)
+    print(f"Applying random jitter of {jitter:.2f} seconds to avoid GitHub Actions rate-limit spikes...")
+    time.sleep(jitter)
 
     session = _build_session()
     response = session.get(url, timeout=(10, 60))
+    
+    if response.status_code == 503:
+        print("WARNING: ArXiv returned a 503 Service Unavailable. This is usually an IP block against GitHub Actions.")
+        print(f"Response HTML/Text: {response.text[:500]}")
+        
     response.raise_for_status()
     return response.text
 

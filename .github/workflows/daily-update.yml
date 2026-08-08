@@ -2,8 +2,8 @@ name: Daily ArXiv Sync and Summarize
 
 on:
   schedule:
-    # Run every day at 00:00 UTC
-    - cron: '0 0 * * *'
+    # Run every day at 17:30 UTC (11:00 PM IST)
+    - cron: '30 17 * * *'
   workflow_dispatch:
     # Allows manual triggering from the GitHub Actions tab
 
