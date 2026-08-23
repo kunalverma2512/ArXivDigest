@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import cohere
 import re
 import asyncio
+import functools
 
 from app.core.config import settings
 from app.core.database import db_info
@@ -73,17 +74,22 @@ async def _keyword_search(q: str, limit: int) -> List[dict]:
 
     return results
 
-async def _semantic_search(q: str, limit: int) -> List[dict]:
-    """
-    Embed the query with Cohere and search Qdrant for nearest vectors.
-    Best for concept/topic queries like "transformer attention mechanism".
-    """
+@functools.lru_cache(maxsize=1000)
+def _get_query_embedding_sync(q: str):
+    """Synchronous cached Cohere call to avoid repeated network hops."""
     embed_res = co.embed(
         texts=[q],
         model='embed-english-v3.0',
         input_type='search_query'
     )
-    query_vector = embed_res.embeddings[0]
+    return embed_res.embeddings[0]
+
+async def _semantic_search(q: str, limit: int) -> List[dict]:
+    """
+    Embed the query with Cohere and search Qdrant for nearest vectors.
+    Best for concept/topic queries like "transformer attention mechanism".
+    """
+    query_vector = await asyncio.to_thread(_get_query_embedding_sync, q)
 
     search_result = await db_info.qdrant.query_points(
         collection_name=COLLECTION_NAME,
@@ -154,7 +160,7 @@ async def _safe_semantic_search(q: str, limit: int) -> List[dict]:
         print(f"Cohere semantic search failed: {e}")
         return []
 
-@router.get("/", response_model=List[SearchResult])
+@router.get("", response_model=List[SearchResult])
 async def search_papers(
     q: str = Query(..., description="The search query — author name, concept, or keyword"),
     limit: int = Query(10, ge=1, le=50)
