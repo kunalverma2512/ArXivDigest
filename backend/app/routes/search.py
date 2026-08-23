@@ -5,6 +5,7 @@ import cohere
 import re
 import asyncio
 import functools
+import time
 
 from app.core.config import settings
 from app.core.database import db_info
@@ -52,12 +53,15 @@ async def _keyword_search(q: str, limit: int) -> List[dict]:
         ]
     }
 
+    t0 = time.perf_counter()
     papers = (
         await Paper.find(mongo_filter)
         .sort("-published_date")
         .limit(limit)
         .to_list()
     )
+    t1 = time.perf_counter()
+    print(f"[TIMING] MongoDB keyword query: {t1 - t0:.3f}s")
 
     # Score: 1.0 for author/title match, 0.75 for abstract match
     results = []
@@ -77,11 +81,14 @@ async def _keyword_search(q: str, limit: int) -> List[dict]:
 @functools.lru_cache(maxsize=1000)
 def _get_query_embedding_sync(q: str):
     """Synchronous cached Cohere call to avoid repeated network hops."""
+    t0 = time.perf_counter()
     embed_res = co.embed(
         texts=[q],
         model='embed-english-v3.0',
         input_type='search_query'
     )
+    t1 = time.perf_counter()
+    print(f"[TIMING] Cohere embed (sync): {t1 - t0:.3f}s")
     return embed_res.embeddings[0]
 
 async def _semantic_search(q: str, limit: int) -> List[dict]:
@@ -91,12 +98,15 @@ async def _semantic_search(q: str, limit: int) -> List[dict]:
     """
     query_vector = await asyncio.to_thread(_get_query_embedding_sync, q)
 
+    t0 = time.perf_counter()
     search_result = await db_info.qdrant.query_points(
         collection_name=COLLECTION_NAME,
         query=query_vector,
         limit=limit,
         with_payload=True
     )
+    t1 = time.perf_counter()
+    print(f"[TIMING] Qdrant query_points: {t1 - t0:.3f}s")
     hits = search_result.points
 
     if not hits:
@@ -113,7 +123,10 @@ async def _semantic_search(q: str, limit: int) -> List[dict]:
         if "arxiv_id" in point.payload
     }
 
+    t2 = time.perf_counter()
     papers = await Paper.find({"arxiv_id": {"$in": arxiv_ids}}).to_list()
+    t3 = time.perf_counter()
+    print(f"[TIMING] MongoDB fetch (from semantic IDs): {t3 - t2:.3f}s")
 
     results = []
     for paper in papers:
@@ -174,6 +187,8 @@ async def search_papers(
         raise HTTPException(status_code=400, detail="Search query cannot be empty.")
 
     try:
+        t_start = time.perf_counter()
+        
         # Launch BOTH network requests at the exact same time
         keyword_task = _keyword_search(q, limit)
         semantic_task = _safe_semantic_search(q, limit)
@@ -182,7 +197,13 @@ async def search_papers(
         keyword_results, semantic_results = await asyncio.gather(keyword_task, semantic_task)
 
         # Merge and return
+        t_merge0 = time.perf_counter()
         merged = _merge_results(keyword_results, semantic_results, limit)
+        t_merge1 = time.perf_counter()
+        print(f"[TIMING] _merge_results: {t_merge1 - t_merge0:.3f}s")
+        
+        t_end = time.perf_counter()
+        print(f"[TIMING] Total search_papers execution: {t_end - t_start:.3f}s")
         return merged
 
     except Exception as e:
