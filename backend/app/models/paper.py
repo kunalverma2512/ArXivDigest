@@ -2,6 +2,7 @@ from typing import List, Optional
 from datetime import datetime
 from beanie import Document
 from pydantic import Field
+import pymongo
 
 class Paper(Document):
     arxiv_id: str = Field(..., description="Unique ArXiv ID of the paper")
@@ -24,5 +25,6 @@ class Paper(Document):
             "arxiv_id",
             "published_date",
             "primary_category",
-            "embedded"
+            "embedded",
+            [("title", pymongo.TEXT), ("abstract", pymongo.TEXT), ("authors", pymongo.TEXT)]
         ]
