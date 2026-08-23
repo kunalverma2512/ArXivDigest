@@ -3,6 +3,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 import cohere
 import re
+import asyncio
 
 from app.core.config import settings
 from app.core.database import db_info
@@ -145,7 +146,13 @@ def _merge_results(keyword: List[dict], semantic: List[dict], limit: int) -> Lis
         SearchResult(paper=r["paper"], score=r["score"], match_type=r["match_type"])
         for r in sorted_results[:limit]
     ]
-
+async def _safe_semantic_search(q: str, limit: int) -> List[dict]:
+    """Wraps semantic search to degrade gracefully if Cohere API fails."""
+    try:
+        return await _semantic_search(q, limit)
+    except Exception as e:
+        print(f"Cohere semantic search failed: {e}")
+        return []
 
 @router.get("/", response_model=List[SearchResult])
 async def search_papers(
@@ -154,31 +161,21 @@ async def search_papers(
 ):
     """
     Hybrid search: combines MongoDB keyword/author search with Cohere semantic vector search.
-    - Short queries or author names → prioritises keyword matching.
-    - Long concept queries → prioritises semantic matching.
+    - Runs both keyword and semantic searches concurrently for lower latency.
     - Papers found by both → score boosted and marked 'hybrid'.
     """
     if not q.strip():
         raise HTTPException(status_code=400, detail="Search query cannot be empty.")
 
     try:
-        is_keyword = _looks_like_keyword_query(q)
+        # Launch BOTH network requests at the exact same time
+        keyword_task = _keyword_search(q, limit)
+        semantic_task = _safe_semantic_search(q, limit)
+        
+        # Await them concurrently
+        keyword_results, semantic_results = await asyncio.gather(keyword_task, semantic_task)
 
-        if is_keyword:
-            # Run keyword first, semantic second (both always run)
-            keyword_results = await _keyword_search(q, limit)
-            try:
-                semantic_results = await _semantic_search(q, limit)
-            except Exception:
-                semantic_results = []  # Degrade gracefully if Cohere fails
-        else:
-            # Concept query — semantic first, keyword for safety net
-            try:
-                semantic_results = await _semantic_search(q, limit)
-            except Exception:
-                semantic_results = []
-            keyword_results = await _keyword_search(q, limit)
-
+        # Merge and return
         merged = _merge_results(keyword_results, semantic_results, limit)
         return merged
 
