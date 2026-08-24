@@ -115,7 +115,9 @@ async def process_papers():
                         payload={
                             "arxiv_id": paper.arxiv_id,
                             "title": paper.title,
-                            "category": paper.primary_category
+                            "category": paper.primary_category,
+                            "published_date": paper.published_date.isoformat(),
+                            "ai_summary": paper.ai_summary
                         }
                     )
                 )
