@@ -15,8 +15,17 @@ router = APIRouter()
 co = cohere.Client(api_key=settings.COHERE_API_KEY)
 COLLECTION_NAME = "arxiv_papers"
 
+from datetime import datetime
+
+class SearchResultPaper(BaseModel):
+    arxiv_id: str
+    title: str
+    primary_category: str
+    published_date: datetime
+    ai_summary: str
+
 class SearchResult(BaseModel):
-    paper: Paper
+    paper: SearchResultPaper
     score: float
     match_type: str  # "semantic" | "keyword" | "hybrid"
 
@@ -74,7 +83,18 @@ async def _keyword_search(q: str, limit: int) -> List[dict]:
             score = 0.9
         elif q_lower in paper.abstract.lower():
             score = 0.75
-        results.append({"paper": paper, "score": score, "match_type": "keyword"})
+        if not paper.ai_summary:
+            print(f"WARNING: Paper {paper.arxiv_id} has no ai_summary despite being embedded! Skipping in keyword search.")
+            continue
+            
+        lean_paper = SearchResultPaper(
+            arxiv_id=paper.arxiv_id,
+            title=paper.title,
+            primary_category=paper.primary_category,
+            published_date=paper.published_date,
+            ai_summary=paper.ai_summary
+        )
+        results.append({"paper": lean_paper, "score": score, "match_type": "keyword"})
 
     return results
 
@@ -112,29 +132,66 @@ async def _semantic_search(q: str, limit: int) -> List[dict]:
     if not hits:
         return []
 
-    arxiv_ids = [
-        point.payload["arxiv_id"]
-        for point in hits
-        if "arxiv_id" in point.payload
-    ]
-    score_map = {
-        point.payload["arxiv_id"]: point.score
-        for point in hits
-        if "arxiv_id" in point.payload
-    }
-
-    t2 = time.perf_counter()
-    papers = await Paper.find({"arxiv_id": {"$in": arxiv_ids}}).to_list()
-    t3 = time.perf_counter()
-    print(f"[TIMING] MongoDB fetch (from semantic IDs): {t3 - t2:.3f}s")
-
     results = []
-    for paper in papers:
-        results.append({
-            "paper": paper,
-            "score": score_map.get(paper.arxiv_id, 0.0),
-            "match_type": "semantic"
-        })
+    missing_ids = []
+    
+    # Try to build directly from Qdrant payload
+    for point in hits:
+        payload = point.payload
+        if not payload or "arxiv_id" not in payload:
+            continue
+            
+        arxiv_id = payload["arxiv_id"]
+        
+        # Check if fully backfilled
+        if "ai_summary" in payload and "published_date" in payload:
+            # We can skip MongoDB for this paper!
+            # Ensure published_date is a datetime object (Qdrant payload stores it as ISO string)
+            pub_date_str = payload["published_date"]
+            pub_date = datetime.fromisoformat(pub_date_str) if isinstance(pub_date_str, str) else pub_date_str
+            
+            lean_paper = SearchResultPaper(
+                arxiv_id=arxiv_id,
+                title=payload["title"],
+                primary_category=payload.get("category", ""),
+                published_date=pub_date,
+                ai_summary=payload["ai_summary"]
+            )
+            results.append({
+                "paper": lean_paper,
+                "score": point.score,
+                "match_type": "semantic"
+            })
+        else:
+            missing_ids.append(arxiv_id)
+
+    # Fallback: Fetch missing (not-yet-backfilled) papers from MongoDB
+    if missing_ids:
+        t2 = time.perf_counter()
+        fallback_papers = await Paper.find({"arxiv_id": {"$in": missing_ids}}).to_list()
+        t3 = time.perf_counter()
+        print(f"[TIMING] Fallback MongoDB fetch for {len(missing_ids)} non-backfilled semantic IDs: {t3 - t2:.3f}s")
+        
+        # We need a quick way to get the original Qdrant score for these
+        score_map = {point.payload["arxiv_id"]: point.score for point in hits if "arxiv_id" in point.payload}
+        
+        for paper in fallback_papers:
+            if not paper.ai_summary:
+                print(f"WARNING: Paper {paper.arxiv_id} has no ai_summary despite being embedded! Skipping in semantic search fallback.")
+                continue
+                
+            lean_paper = SearchResultPaper(
+                arxiv_id=paper.arxiv_id,
+                title=paper.title,
+                primary_category=paper.primary_category,
+                published_date=paper.published_date,
+                ai_summary=paper.ai_summary
+            )
+            results.append({
+                "paper": lean_paper,
+                "score": score_map.get(paper.arxiv_id, 0.0),
+                "match_type": "semantic"
+            })
 
     return results
 
