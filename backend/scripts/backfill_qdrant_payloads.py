@@ -42,7 +42,7 @@ async def backfill(test_mode=True):
             collection_name=COLLECTION_NAME,
             limit=limit,
             offset=offset,
-            with_payload=["arxiv_id"],
+            with_payload=["arxiv_id", "ai_summary", "published_date"],
             with_vectors=False
         )
         
@@ -66,6 +66,10 @@ async def backfill(test_mode=True):
                 print(f"WARNING: Paper {arxiv_id} has no ai_summary despite being embedded! Skipping backfill for this paper.")
                 continue
 
+            # Idempotency check: if already backfilled, skip to save API calls
+            if "ai_summary" in record.payload and "published_date" in record.payload:
+                continue
+
             # The only fields we need to ensure are set in Qdrant for the new SearchResultPaper model:
             # title, category, published_date, ai_summary. (arxiv_id is already there)
             new_payload = {
@@ -83,7 +87,13 @@ async def backfill(test_mode=True):
             )
             
             processed += 1
-            print(f"Updated payload for ArXiv ID: {arxiv_id} (Qdrant Point ID: {record.id})")
+            if test_mode:
+                print(f"Updated payload for ArXiv ID: {arxiv_id} (Qdrant Point ID: {record.id})")
+            elif processed % 100 == 0:
+                print(f"Progress: Updated {processed} papers so far...")
+            
+            # Rate limit protection for Qdrant Cloud Free Tier
+            await asyncio.sleep(0.05)
             
             if test_mode and processed >= 5:
                 print("Test mode limit reached (5 points). Exiting.")
